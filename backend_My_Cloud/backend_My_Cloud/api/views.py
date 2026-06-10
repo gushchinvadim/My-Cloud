@@ -250,6 +250,7 @@ class FileShareView(APIView):
             traceback.print_exc()
             return Response({"error": str(e)}, status=500)
 
+
 class PublicFileDownloadView(APIView):
     permission_classes = [permissions.AllowAny]
 
@@ -259,13 +260,16 @@ class PublicFileDownloadView(APIView):
             file_obj.last_downloaded_at = timezone.now()
             file_obj.save(update_fields=['last_downloaded_at'])
 
-            response = FileResponse(open(file_obj.file_path, 'rb'), as_attachment=True)
-            response['Content-Disposition'] = f'attachment; filename="{file_obj.original_name}"'
+            # FileResponse сам корректно выставит Content-Disposition
+            response = FileResponse(
+                open(file_obj.file_path, 'rb'),
+                as_attachment=True,
+                filename=file_obj.original_name
+            )
             return response
+
         except File.DoesNotExist:
             return Response({"error": "Ссылка недействительна"}, status=404)
-
-
 
 # ==================== ПРЕДПРОСМОТР ====================
 

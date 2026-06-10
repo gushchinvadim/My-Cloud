@@ -10,38 +10,44 @@ function SharedFilePage() {
   const downloadSharedFile = useCallback(async () => {
     try {
       setLoading(true);
+      
       const response = await fetch(`/api/shared/${token}/`);
       
       if (!response.ok) {
-        throw new Error('Файл не найден или ссылка недействительна');
+        throw new Error('Ошибка при скачивании файла');
       }
+
+      const blob = await response.blob();
       
-      const contentDisposition = response.headers.get('Content-Disposition');
+      // 1. Пытаемся получить имя из заголовка Content-Disposition
+      const contentDisposition = response.headers.get('content-disposition');
       let fileName = 'downloaded_file';
+      
       if (contentDisposition) {
-        const fileNameMatch = contentDisposition.match(/filename="?(.+)"?/);
-        if (fileNameMatch) {
-          fileName = fileNameMatch[1];
+        // Извлекаем имя между filename=" и "
+        const match = contentDisposition.match(/filename="?([^";]+)"?/);
+        if (match && match[1]) {
+          fileName = decodeURIComponent(match[1].trim());
         }
       }
-      
-      const blob = await response.blob();
+
+      // 2. Создаём ссылку и инициируем скачивание
       const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', fileName);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName; // ← Чистое имя из заголовка
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
       window.URL.revokeObjectURL(url);
       
-      setTimeout(() => navigate('/'), 1000);
-    } catch (err) {
-      console.error('Ошибка скачивания:', err);
-      setError(err.message || 'Не удалось скачать файл');
+    } catch (error) {
+      console.error('Ошибка скачивания:', error);
+      setError('Не удалось скачать файл');
+    } finally {
       setLoading(false);
     }
-  }, [token, navigate]);
+  }, [token]);
 
   useEffect(() => {
     downloadSharedFile();
