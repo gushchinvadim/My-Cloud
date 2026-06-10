@@ -7,6 +7,7 @@ urlpatterns = [
     path('auth/login/', views.LoginView.as_view()),
     path('auth/logout/', views.LogoutView.as_view()),
     path('auth/me/', views.MeView.as_view()),
+    path('auth/csrf-token/', views.GetCSRFToken.as_view(), name='csrf-token'),
 
     # Администрирование
     path('admin/users/', views.AdminUserListView.as_view()),
@@ -22,4 +23,6 @@ urlpatterns = [
 
     # Публичная ссылка (обезличенная)
     path('shared/<uuid:token>/', views.PublicFileDownloadView.as_view()),
+    # Предпросмотр
+    path('files/<int:file_id>/preview/', views.FilePreviewView.as_view()),
 ]

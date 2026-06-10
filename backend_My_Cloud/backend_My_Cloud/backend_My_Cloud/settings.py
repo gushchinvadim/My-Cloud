@@ -156,24 +156,55 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # ]
 
 # CORS_ALLOW_ALL_ORIGINS = True # для разработки
-# на продакшене установить:
+# # на продакшене установить:
 # CORS_ALLOW_ALL_ORIGINS = False  # всегда False в продакшене!
-CORS_ALLOWED_ORIGINS = config('CORS_ALLOWED_ORIGINS', default='').split(',')
+# CORS_ALLOWED_ORIGINS = config('CORS_ALLOWED_ORIGINS', default='').split(',')
 
-# Убедитесь, что кука помечена как "сайтовая"
+# 🔹 КРИТИЧНО: разрешить credentials (cookies)
+# CSRF настройки для работы с React
+CSRF_COOKIE_NAME = 'csrftoken'
+CSRF_COOKIE_HTTPONLY = False  # Важно: JavaScript должен иметь доступ к cookie
+CSRF_COOKIE_SAMESITE = 'Lax'
+CSRF_COOKIE_SECURE = False  # Для разработки (True для продакшена с HTTPS)
+
+# Разрешаем фронтенду отправлять CSRF-токен
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+]
+
+# CORS настройки
+CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+]
+
+# Разрешаем заголовок X-CSRFToken
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',  # ← Добавили
+    'x-requested-with',
+]
 if DEBUG:
-    # Разработка — всё разрешено
     CSRF_COOKIE_HTTPONLY = False
     CSRF_COOKIE_SECURE = False
     SESSION_COOKIE_SECURE = False
     CSRF_COOKIE_SAMESITE = 'Lax'
     SESSION_COOKIE_SAMESITE = 'Lax'
-    CORS_ALLOW_ALL_ORIGINS = True
 else:
-    # Продакшен — строгие настройки
     CSRF_COOKIE_HTTPONLY = True
     CSRF_COOKIE_SECURE = True
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SAMESITE = 'Lax'
     SESSION_COOKIE_SAMESITE = 'Lax'
-    CORS_ALLOW_ALL_ORIGINS = False
