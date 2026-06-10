@@ -1,1 +1,19 @@
 media/
+# Секреты
+.env
+backend_My_Cloud/.env
+
+# Файловое хранилище
+backend_My_Cloud/media/
+
+# Python
+__pycache__/
+*.pyc
+venv/
+
+# Node
+node_modules/
+frontend_My_Cloud/dist/
+
+# macOS
+.DS_Store

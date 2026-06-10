@@ -82,4 +82,3 @@
             └── {user_id}/          # ID пользователя Django
                 └── {unique_name}   # UUID + расширение
 
-## Создание frontend (Локально)

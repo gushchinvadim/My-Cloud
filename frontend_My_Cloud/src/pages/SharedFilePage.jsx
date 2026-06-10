@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 
 function SharedFilePage() {
@@ -7,21 +7,15 @@ function SharedFilePage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    downloadSharedFile();
-  }, [token]);
-
-  const downloadSharedFile = async () => {
+  const downloadSharedFile = useCallback(async () => {
     try {
       setLoading(true);
-      // Скачиваем напрямую с бэкенда
       const response = await fetch(`http://localhost:8000/api/shared/${token}/`);
       
       if (!response.ok) {
         throw new Error('Файл не найден или ссылка недействительна');
       }
       
-      // Получаем оригинальное имя из заголовка Content-Disposition
       const contentDisposition = response.headers.get('Content-Disposition');
       let fileName = 'downloaded_file';
       if (contentDisposition) {
@@ -31,7 +25,6 @@ function SharedFilePage() {
         }
       }
       
-      // Создаём blob и скачиваем
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -42,14 +35,17 @@ function SharedFilePage() {
       link.remove();
       window.URL.revokeObjectURL(url);
       
-      // Перенаправляем на главную после скачивания
       setTimeout(() => navigate('/'), 1000);
-    } catch (error) {
-      console.error('Ошибка скачивания:', error);
-      setError(error.message || 'Не удалось скачать файл');
+    } catch (err) {
+      console.error('Ошибка скачивания:', err);
+      setError(err.message || 'Не удалось скачать файл');
       setLoading(false);
     }
-  };
+  }, [token, navigate]);
+
+  useEffect(() => {
+    downloadSharedFile();
+  }, [downloadSharedFile]);
 
   if (loading) {
     return (

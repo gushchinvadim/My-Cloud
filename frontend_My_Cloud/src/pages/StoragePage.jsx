@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 import {
   getFiles,
   getUserFiles,
@@ -15,13 +15,11 @@ import { getUsers } from '../api/admin';
 import FilePreviewModal from '../components/FilePreviewModal';
 
 function StoragePage() {
-  // Хуки должны быть в самом начале компонента
   const navigate = useNavigate();
   const { user, isAdmin } = useAuth();
   const [searchParams] = useSearchParams();
   const viewingUserId = searchParams.get('user_id');
 
-  // Состояния
   const [files, setFiles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -41,15 +39,9 @@ function StoragePage() {
   const [previewFile, setPreviewFile] = useState(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
-  // Определение, чьё хранилище просматриваем
   const isOwnStorage = !viewingUserId || viewingUserId === user?.id?.toString();
 
-  // Загрузка файлов
-  useEffect(() => {
-    loadFiles();
-  }, [viewingUserId]);
-
-  const loadFiles = async () => {
+  const loadFiles = useCallback(async () => {
     try {
       setLoading(true);
       
@@ -66,11 +58,11 @@ function StoragePage() {
       
       setFiles(data);
       setError('');
-    } catch (error) {
-      console.error('Ошибка загрузки файлов:', error);
-      if (error.response?.status === 401) {
+    } catch (err) {
+      console.error('Ошибка загрузки файлов:', err);
+      if (err.response?.status === 401) {
         navigate('/login');
-      } else if (error.response?.status === 403) {
+      } else if (err.response?.status === 403) {
         setError('У вас нет доступа к этому хранилищу');
       } else {
         setError('Не удалось загрузить файлы');
@@ -78,7 +70,13 @@ function StoragePage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [viewingUserId, isAdmin, navigate]);
+
+  useEffect(() => {
+    loadFiles();
+  }, [loadFiles]);
+
+// ================
 
   // Обработчики
   const handleFileSelect = (e) => {

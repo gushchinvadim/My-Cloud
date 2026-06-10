@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { getUsers, deleteUser, toggleAdmin } from '../api/admin';
 
 function AdminPage() {
@@ -7,31 +7,31 @@ function AdminPage() {
   const [error, setError] = useState('');
   const [confirmDelete, setConfirmDelete] = useState(null);
 
-  useEffect(() => {
-    loadUsers();
-  }, []);
-
-  const loadUsers = async () => {
+  const loadUsers = useCallback(async () => {
     try {
       setLoading(true);
       const data = await getUsers();
       setUsers(data);
       setError('');
-    } catch (error) {
-      console.error('Ошибка загрузки пользователей:', error);
+    } catch (err) {
+      console.error('Ошибка загрузки пользователей:', err);
       setError('Не удалось загрузить список пользователей');
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    loadUsers();
+  }, [loadUsers]);
 
   const handleDelete = async (userId, userName) => {
     try {
       await deleteUser(userId);
       setUsers(users.filter(u => u.id !== userId));
       setConfirmDelete(null);
-    } catch (error) {
-      console.error('Ошибка удаления:', error);
+    } catch (err) {
+      console.error('Ошибка удаления:', err);
       setError(`Не удалось удалить пользователя ${userName}`);
     }
   };
@@ -42,13 +42,12 @@ function AdminPage() {
       setUsers(users.map(u => 
         u.id === userId ? { ...u, is_admin: response.is_admin } : u
       ));
-    } catch (error) {
-      console.error('Ошибка изменения прав:', error);
+    } catch (err) {
+      console.error('Ошибка изменения прав:', err);
       setError('Не удалось изменить права пользователя');
     }
   };
 
-  // Форматирование размера
   const formatSize = (bytes) => {
     if (!bytes || bytes === 0) return '0 Б';
     const k = 1024;
@@ -138,7 +137,6 @@ function AdminPage() {
         ))}
       </div>
 
-      {/* Модальное окно подтверждения удаления */}
       {confirmDelete && (
         <div className="modal-overlay" onClick={() => setConfirmDelete(null)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>

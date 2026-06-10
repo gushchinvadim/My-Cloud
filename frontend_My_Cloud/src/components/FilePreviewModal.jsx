@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { getPreviewUrl, getFileText, downloadFile, getShareLink } from '../api/files';
+import { useState, useEffect, useCallback } from 'react';
+import { getPreviewUrl, getFileText, downloadFile } from '../api/files';
 
 const getFileType = (filename) => {
   const ext = filename.split('.').pop().toLowerCase();
@@ -33,17 +33,7 @@ function FilePreviewModal({ file, isOpen, onClose, userId = null }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    if (isOpen && file) {
-      loadPreview();
-    }
-    return () => {
-      setTextContent('');
-      setError('');
-    };
-  }, [isOpen, file]);
-
-  const loadPreview = async () => {
+  const loadPreview = useCallback(async () => {
     const fileType = getFileType(file.original_name);
     
     if (fileType === 'text') {
@@ -56,12 +46,23 @@ function FilePreviewModal({ file, isOpen, onClose, userId = null }) {
           setTextContent(text);
         }
       } catch (err) {
+        console.error('Ошибка загрузки текста:', err);
         setError('Не удалось загрузить файл');
       } finally {
         setLoading(false);
       }
     }
-  };
+  }, [file, userId]);
+
+  useEffect(() => {
+    if (isOpen && file) {
+      loadPreview();
+    }
+    return () => {
+      setTextContent('');
+      setError('');
+    };
+  }, [isOpen, file, loadPreview]);
 
   const handleDownload = async () => {
     try {
@@ -120,7 +121,6 @@ function FilePreviewModal({ file, isOpen, onClose, userId = null }) {
         );
       
       case 'pdf':
-        // 🔹 Используем <object> вместо <iframe> — работает с cookies
         return (
           <object 
             data={previewUrl} 

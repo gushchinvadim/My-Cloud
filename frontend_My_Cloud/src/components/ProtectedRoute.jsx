@@ -3,27 +3,26 @@ import { useState, useEffect } from 'react';
 import api from '../api/axios';
 
 function ProtectedRoute({ children, adminOnly = false }) {
-  const [status, setStatus] = useState('loading'); // 'loading' | 'authenticated' | 'unauthorized' | 'forbidden'
-  const [user, setUser] = useState(null);
+  const [status, setStatus] = useState('loading');
 
   useEffect(() => {
-    checkAuth();
-  }, []);
-
-  const checkAuth = async () => {
-    try {
-      const response = await api.get('auth/me/');
-      setUser(response.data);
-      
-      if (adminOnly && !response.data.is_admin) {
-        setStatus('forbidden');
-      } else {
-        setStatus('authenticated');
+    const checkAuth = async () => {
+      try {
+        const response = await api.get('auth/me/');
+        
+        if (adminOnly && !response.data.is_admin) {
+          setStatus('forbidden');
+        } else {
+          setStatus('authenticated');
+        }
+      } catch (err) {
+        console.error('Ошибка аутентификации:', err);
+        setStatus('unauthorized');
       }
-    } catch (error) {
-      setStatus('unauthorized');
-    }
-  };
+    };
+    
+    checkAuth();
+  }, [adminOnly]);
 
   if (status === 'loading') {
     return <div className="loading-screen">Загрузка...</div>;

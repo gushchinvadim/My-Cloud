@@ -26,8 +26,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = config('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-# DEBUG = config('DEBUG', default=False, cast=bool) # на продакшн
+# DEBUG = True
+DEBUG = config('DEBUG', default=False, cast=bool) # на продакшн
 
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1').split(',')
 
@@ -51,6 +51,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -127,7 +128,10 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = 'static/'
+
+# Статические файлы
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATIC_URL = '/static/'
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
@@ -160,31 +164,42 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # CORS_ALLOW_ALL_ORIGINS = False  # всегда False в продакшене!
 # CORS_ALLOWED_ORIGINS = config('CORS_ALLOWED_ORIGINS', default='').split(',')
 
-# 🔹 КРИТИЧНО: разрешить credentials (cookies)
-# CSRF настройки для работы с React
+# ==================== CSRF НАСТРОЙКИ ====================
 CSRF_COOKIE_NAME = 'csrftoken'
-CSRF_COOKIE_HTTPONLY = False  # Важно: JavaScript должен иметь доступ к cookie
-CSRF_COOKIE_SAMESITE = 'Lax'
-CSRF_COOKIE_SECURE = False  # Для разработки (True для продакшена с HTTPS)
 
-# Разрешаем фронтенду отправлять CSRF-токен
-CSRF_TRUSTED_ORIGINS = [
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-]
+# 🔹 CSRF_TRUSTED_ORIGINS — формируем правильно
+CSRF_TRUSTED_ORIGINS = []
 
-# CORS настройки
-CORS_ALLOW_CREDENTIALS = True
+# Добавляем https-версии для продакшен-доменов
+for host in ALLOWED_HOSTS:
+    if host not in ['localhost', '127.0.0.1']:
+        CSRF_TRUSTED_ORIGINS.append(f'https://{host}')
+
+# Добавляем локальные URL для разработки
+CSRF_TRUSTED_ORIGINS.extend([
+    'http://localhost:5173',
+    'http://127.0.0.1:5173',
+])
+
+
+# ==================== CORS НАСТРОЙКИ ====================
+# Читаем из .env файла
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
+    origin.strip()
+    for origin in config('CORS_ALLOWED_ORIGINS', default='').split(',')
+    if origin.strip()
 ]
 
-# Разрешаем заголовок X-CSRFToken
+# Разрешённые методы и заголовки
+CORS_ALLOW_METHODS = [
+    'DELETE',
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
+]
+
 CORS_ALLOW_HEADERS = [
     'accept',
     'accept-encoding',
@@ -193,18 +208,36 @@ CORS_ALLOW_HEADERS = [
     'dnt',
     'origin',
     'user-agent',
-    'x-csrftoken',  # ← Добавили
+    'x-csrftoken',
     'x-requested-with',
 ]
+
+CORS_ALLOW_CREDENTIALS = True
+
+# ==================== COOKIE НАСТРОЙКИ ====================
 if DEBUG:
+    # Для разработки — всё отключаем
     CSRF_COOKIE_HTTPONLY = False
     CSRF_COOKIE_SECURE = False
     SESSION_COOKIE_SECURE = False
     CSRF_COOKIE_SAMESITE = 'Lax'
     SESSION_COOKIE_SAMESITE = 'Lax'
+
+    # 🔹 ВАЖНО: отключаем SSL redirect для локальной разработки
+    SECURE_SSL_REDIRECT = False
 else:
-    CSRF_COOKIE_HTTPONLY = True
+    # Для продакшена (HTTPS)
+    CSRF_COOKIE_HTTPONLY = False
     CSRF_COOKIE_SECURE = True
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SAMESITE = 'Lax'
     SESSION_COOKIE_SAMESITE = 'Lax'
+
+    # Дополнительные настройки безопасности для продакшена
+    SECURE_BROWSER_XSS_FILTER = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    SECURE_HSTS_SECONDS = 31536000
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+    SECURE_SSL_REDIRECT = True
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
