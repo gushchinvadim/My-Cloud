@@ -20,6 +20,7 @@
 - [Использование](#-использование)
 - [API Endpoints](#-api-endpoints)
 - [Решение частых проблем](#-решение-частых-проблем)
+- [Деплой на reg.ru](#-деплой-на-regru)
 
 ## ✨ Возможности
 
@@ -131,13 +132,13 @@ psql --version
 psql postgres
 
 # В консоли PostgreSQL выполните:
-CREATE USER vadim WITH PASSWORD 'vadim';
-CREATE DATABASE my_cloud_db OWNER vadim;
-GRANT ALL PRIVILEGES ON DATABASE my_cloud_db TO vadim;
+CREATE USER login WITH PASSWORD 'pass';
+CREATE DATABASE my_cloud_db OWNER login;
+GRANT ALL PRIVILEGES ON DATABASE my_cloud_db TO login;
 \q
 ```
 
-> 💡 **Замените `vadim` на ваше имя пользователя и пароль.**
+> 💡 **Замените `login` на ваше имя пользователя и пароль.**
 
 ### 4. Настройка бэкенда
 
@@ -325,6 +326,22 @@ exit()
 | GET | `/api/files/<id>/preview/` | Предпросмотр |
 | POST | `/api/files/<id>/share/` | Получить публичную ссылку |
 | GET | `/api/shared/<token>/` | Скачать по публичной ссылке |
+
+
+## 🚀 Деплой на reg.ru
+
+### Подготовка к деплою
+
+#### 1. Установка gunicorn
+
+Gunicorn — это WSGI-сервер для продакшена. Установите его в виртуальное окружение:
+
+```bash
+cd backend_My_Cloud
+source venv/bin/activate
+pip install gunicorn whitenoise psycopg2
+pip freeze > requirements.txt
+```
 
 ## 🐛 Решение частых проблем
 
