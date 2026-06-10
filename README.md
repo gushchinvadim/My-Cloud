@@ -19,8 +19,9 @@
 - [Первый вход в систему](#-первый-вход-в-систему)
 - [Использование](#-использование)
 - [API Endpoints](#-api-endpoints)
-- [Решение частых проблем](#-решение-частых-проблем)
 - [Деплой на reg.ru](#-деплой-на-regru)
+- [Решение частых проблем](#-решение-частых-проблем)
+
 
 ## ✨ Возможности
 
@@ -342,6 +343,260 @@ source venv/bin/activate
 pip install gunicorn whitenoise psycopg2
 pip freeze > requirements.txt
 ```
+#### 2. Обновите settings.py для продакшена
+<!-- SECURITY WARNING: don't run with debug turned on in production! -->
+DEBUG = config('DEBUG', default=False, cast=bool)
+
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='').split(',')
+
+<!-- Статические файлы -->
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATIC_URL = '/static/'
+
+<!-- # WhiteNoise для раздачи статики -->
+MIDDLEWARE = [
+    'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # ← Добавьте после SecurityMiddleware
+    # ... остальные middleware
+]
+
+<!-- # Безопасность -->
+SECURE_BROWSER_XSS_FILTER = True
+SECURE_CONTENT_TYPE_NOSNIFF = True
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
+SECURE_SSL_REDIRECT = True
+SECURE_HSTS_SECONDS = 31536000
+SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+SECURE_HSTS_PRELOAD = True
+
+<!-- # CORS для продакшена -->
+CORS_ALLOWED_ORIGINS = [
+    "https://ваш-домен.ru",
+]
+CORS_ALLOW_CREDENTIALS = True
+
+#### 3. Обновите .env для продакшена
+
+DEBUG=False
+
+SECRET_KEY=ваш-очень-секретный-ключ
+
+ALLOWED_HOSTS=ваш-домен.ru,www.ваш-домен.ru
+
+DB_NAME=my_cloud_db
+DB_USER=vadim
+DB_PASSWORD=очень-сложный-пароль
+DB_HOST=localhost
+DB_PORT=5432
+
+CORS_ALLOWED_ORIGINS=https://ваш-домен.ru
+
+### Деплой на VPS reg.ru
+
+#### Шаг 1: Заказ VPS
+Зайдите на reg.ru
+Выберите тариф VPS (не Shared Hosting!)
+Рекомендуемые параметры:
+ОС: Ubuntu 22.04 LTS
+CPU: 2 ядра
+RAM: 2 ГБ
+SSD: 20 ГБ
+Закажите и дождитесь письма с доступами
+
+#### Шаг 2: Подключение к серверу
+
+в терминале
+ssh root@ваш-ip-адрес
+
+#### Шаг 3: Обновление системы и установка зависимостей
+
+##### Обновление пакетов
+apt update && apt upgrade -y
+
+##### Установка Python, PostgreSQL, Nginx
+apt install -y python3-pip python3-venv postgresql postgresql-contrib nginx git
+
+##### Проверка версий
+python3 --version
+psql --version
+nginx -v
+
+#### Шаг 4: Настройка PostgreSQL
+
+# Переключение на пользователя postgres
+su - postgres
+
+- Создание БД и пользователя
+psql
+CREATE USER vadim WITH PASSWORD 'очень-сложный-пароль';
+CREATE DATABASE my_cloud_db OWNER vadim;
+GRANT ALL PRIVILEGES ON DATABASE my_cloud_db TO vadim;
+\q
+
+- Выход из postgres
+exit
+
+#### Шаг 5: Клонирование проекта
+
+##### Создание папки для проекта
+mkdir -p /var/www/my-cloud
+cd /var/www/my-cloud
+
+##### Клонирование репозитория
+git clone https://github.com/ваш-логин/My-Cloud.git .
+
+##### Создание виртуального окружения
+python3 -m venv venv
+source venv/bin/activate
+
+##### Установка зависимостей
+pip install --upgrade pip
+pip install -r backend_My_Cloud/requirements.txt
+
+##### Применение миграций
+cd backend_My_Cloud
+python manage.py migrate
+
+##### Сбор статики
+python manage.py collectstatic --noinput
+
+##### Создание суперпользователя
+python manage.py createsuperuser
+
+##### Выход из venv
+deactivate
+
+#### Шаг 6: Настройка Gunicorn
+
+- Создайте файл сервиса systemd: nano /etc/systemd/system/my-cloud.service
+
+- Вставьте содержимое:
+
+[Unit]
+Description=My-Cloud Django Application
+After=network.target
+
+[Service]
+User=root
+Group=www-data
+WorkingDirectory=/var/www/my-cloud/backend_My_Cloud
+ExecStart=/var/www/my-cloud/backend_My_Cloud/venv/bin/gunicorn \
+    --access-logfile - \
+    --workers 3 \
+    --bind unix:/var/www/my-cloud/my-cloud.sock \
+    backend_My_Cloud.wsgi:application
+
+[Install]
+WantedBy=multi-user.target
+
+- Запустите сервис:
+
+systemctl start my-cloud
+systemctl enable my-cloud
+systemctl status my-cloud
+
+#### Шаг 7: Настройка Nginx
+
+- Создайте конфигурацию сайта: nano /etc/nginx/sites-available/my-cloud
+- Вставьте содержимое:
+
+server {
+    listen 80;
+    server_name ваш-домен.ru www.ваш-домен.ru;
+
+    location = /favicon.ico { access_log off; log_not_found off; }
+    
+    location /static/ {
+        alias /var/www/my-cloud/backend_My_Cloud/staticfiles/;
+    }
+
+    location /media/ {
+        alias /var/www/my-cloud/backend_My_Cloud/media/;
+    }
+
+    location / {
+        include proxy_params;
+        proxy_pass http://unix:/var/www/my-cloud/my-cloud.sock;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+
+- Активируйте сайт:
+
+ln -s /etc/nginx/sites-available/my-cloud /etc/nginx/sites-enabled/
+nginx -t
+systemctl restart nginx
+
+#### Шаг 8: Настройка SSL (Let's Encrypt)
+
+##### Установка Certbot
+apt install -y certbot python3-certbot-nginx
+
+##### Получение сертификата
+certbot --nginx -d ваш-домен.ru -d www.ваш-домен.ru
+
+##### Автоматическое обновление
+certbot renew --dry-run
+
+#### Шаг 9: Настройка firewall
+
+##### Установка UFW
+apt install -y ufw
+
+##### Разрешение SSH, HTTP, HTTPS
+ufw allow OpenSSH
+ufw allow 'Nginx Full'
+ufw enable
+
+##### Проверка статуса
+ufw status
+
+### Обновление проекта на сервере
+
+cd /var/www/my-cloud
+git pull origin main
+
+cd backend_My_Cloud
+source ../venv/bin/activate
+
+#### Установка новых зависимостей (если были изменения)
+pip install -r requirements.txt
+
+#### Применение миграций
+python manage.py migrate
+
+#### Сбор статики
+python manage.py collectstatic --noinput
+
+#### Перезапуск Gunicorn
+systemctl restart my-cloud
+
+deactivate
+
+### Мониторинг и логи
+
+#### Логи Gunicorn
+journalctl -u my-cloud -f
+
+#### Логи Nginx
+tail -f /var/log/nginx/access.log
+tail -f /var/log/nginx/error.log
+
+#### Статус сервисов
+systemctl status my-cloud
+systemctl status nginx
+systemctl status postgresql
+
+### Полезные команды reg.ru
+
+Панель управления: https://www.reg.ru/
+Документация VPS: https://www.reg.ru/support/hosting-i-servisy/virtualnyy-server-vps
+Техподдержка: 8 (800) 555-10-81
+
 
 ## 🐛 Решение частых проблем
 
@@ -360,6 +615,8 @@ pip freeze > requirements.txt
 brew services list           # Проверить статус
 brew services restart postgresql@16  # Перезапустить
 ```
+
+
 
 ### Ошибка "relation does not exist"
 **Решение**: Примените миграции:
