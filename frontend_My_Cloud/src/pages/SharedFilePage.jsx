@@ -10,7 +10,7 @@ function SharedFilePage() {
   const downloadSharedFile = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await fetch(`http://localhost:8000/api/shared/${token}/`);
+      const response = await fetch(`/api/shared/${token}/`);
       
       if (!response.ok) {
         throw new Error('Файл не найден или ссылка недействительна');

@@ -163,7 +163,7 @@ function StoragePage() {
     try {
       const data = await getShareLink(fileId, viewingUserId);  // ← передаём userId
       const token = data.share_url.split('/').filter(Boolean).pop();
-      const shareUrl = `http://localhost:5173/shared/${token}`;
+      const shareUrl = `${window.location.origin}/shared/${token}`;
       
       setShareModal({
         isOpen: true,

@@ -1,11 +1,24 @@
 import axios from 'axios';
 
+// Динамически определяем baseURL
+const getBaseURL = () => {
+  const hostname = window.location.hostname;
+  
+  // Локальная разработка
+  if (hostname === 'localhost' || hostname === '127.0.0.1') {
+    return 'http://localhost:8000/api/';
+  }
+  
+  // Продакшен — относительный путь
+  return '/api/';
+};
+
 const api = axios.create({
-  baseURL: 'http://localhost:8000/api/',
+  baseURL: getBaseURL(),
   headers: {
     'Content-Type': 'application/json',
   },
-  withCredentials: true, // Важно для cookies
+  withCredentials: true,
 });
 
 // Функция для получения CSRF-токена из cookie
@@ -24,19 +37,16 @@ function getCookie(name) {
   return cookieValue;
 }
 
-// Interceptor: автоматически добавляем CSRF-токен в заголовки
+// Interceptor: автоматически добавляем CSRF-токен
 api.interceptors.request.use(
   (config) => {
-    // Получаем CSRF-токен из cookie
     const csrfToken = getCookie('csrftoken');
     if (csrfToken) {
       config.headers['X-CSRFToken'] = csrfToken;
     }
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
 export default api;
