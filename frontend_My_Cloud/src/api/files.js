@@ -67,8 +67,8 @@ export const getShareLink = async (fileId, userId = null) => {
 
 // Получить URL для предпросмотра файла (с поддержкой user_id для админа)
 // Возвращает URL для предпросмотра файла
-export const getPreviewUrl = (fileId, params = '') => {
-  return `/api/files/${fileId}/preview/${params}`;
+export const getPreviewUrl = (fileId, userId = null) => {
+  return userId ? `/api/files/${fileId}/preview/?user_id=${userId}` : `/api/files/${fileId}/preview/`;
 };
 
 // Получить содержимое текстового файла
