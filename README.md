@@ -1,13 +1,26 @@
 # ☁️ My-Cloud — Облачное хранилище файлов
 
+<div align="center">
+
+[![Live Demo](https://img.shields.io/badge/Live_Demo-mycloud.gvedynamics.ru-0078D4?style=for-the-badge&logo=nginx&logoColor=white)](https://mycloud.gvedynamics.ru)
+[![Status](https://img.shields.io/badge/Status-Online-brightgreen?style=for-the-badge&logo=statuspage&logoColor=white)](https://mycloud.gvedynamics.ru)
+
+</div>
+
 Полнофункциональное веб-приложение для облачного хранения файлов с административной панелью, сессионной аутентификацией и возможностью публичного доступа к файлам через обезличенные ссылки.
 
 Проект разработан в рамках дипломной работы. Реализует функционал, аналогичный Google Drive, Яндекс.Диску и Dropbox.
 
-![Python](https://img.shields.io/badge/Python-3.14-blue)
-![Django](https://img.shields.io/badge/Django-5.2.2-green)
-![React](https://img.shields.io/badge/React-19-61DAFB)
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-336791)
+<div align="center">
+
+<img src="https://img.shields.io/badge/Python-3.14-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python">
+<img src="https://img.shields.io/badge/Django-5.2.2-092E20?style=for-the-badge&logo=django&logoColor=white" alt="Django">
+<img src="https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=black" alt="React">
+<img src="https://img.shields.io/badge/PostgreSQL-16-4169E1?style=for-the-badge&logo=postgresql&logoColor=white" alt="PostgreSQL">
+<img src="https://img.shields.io/badge/Nginx-1.24-009639?style=for-the-badge&logo=nginx&logoColor=white" alt="Nginx">
+<img src="https://img.shields.io/badge/Vite-8-646CFF?style=for-the-badge&logo=vite&logoColor=white" alt="Vite">
+
+</div>
 
 ## 📋 Содержание
 
@@ -634,6 +647,19 @@ python manage.py runserver 8001
 yarn dev --port 3001
 ```
 Не забудьте обновить `baseURL` в `src/api/axios.js` и `CORS_ALLOWED_ORIGINS` в `.env`.
+
+
+---
+
+<div align="center">
+
+![License](https://img.shields.io/badge/License-Educational-blue?style=for-the-badge)
+![Last Commit](https://img.shields.io/github/last-commit/gushchinvadim/My-Cloud?style=for-the-badge&color=orange)
+![Repo Size](https://img.shields.io/github/repo-size/gushchinvadim/My-Cloud?style=for-the-badge&color=purple)
+
+**Сделано с ❤️ в рамках дипломной работы**
+
+</div>
 
 ## 📝 Лицензия
 
