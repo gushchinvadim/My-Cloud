@@ -17,3 +17,6 @@ frontend_My_Cloud/dist/
 
 # macOS
 .DS_Store
+
+backend_My_Cloud/backend_My_Cloud/logs/*.log
+!backend_My_Cloud/backend_My_Cloud/logs/.gitkeep

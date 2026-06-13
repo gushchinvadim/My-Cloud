@@ -33,17 +33,26 @@ class RegisterSerializer(serializers.Serializer):
         return value
 
     def create(self, validated_data):
-        user = User.objects.create_user(
-            username=validated_data['login'],
-            email=validated_data['email'],
-            password=validated_data['password']
-        )
+        # Извлекаем данные для CloudUser
+        fullname = validated_data.pop('fullname', '')
+        email = validated_data.get('email', '')
+        username = validated_data.get('username', '')
+
+        # Создаём пользователя Django
+        user = User.objects.create_user(**validated_data)
+
+        # Генерируем nickname из username (первые 15 символов)
+        nickname = username[:15] if username else f"user_{user.id}"
+
+        # Создаём профиль CloudUser
         CloudUser.objects.create(
             user=user,
-            fullname=validated_data['fullname'],
-            email=validated_data['email'],
+            fullname=fullname,
+            nickname=nickname,
+            email=email,
             storage_path=f"storage/user_{user.id}/"
         )
+
         return user
 
 
